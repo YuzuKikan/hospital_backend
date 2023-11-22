@@ -1,0 +1,50 @@
+<h1 mat-dialog-title>Crear Médico</h1>
+
+<div mat-dialog-content>
+  <form [formGroup]="formGroup">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <mat-radio-group formControlName="habilitado" name="habilitado">
+            <mat-radio-button [value]="true">Habilitado</mat-radio-button>
+            <mat-radio-button [value]="false">Inhabilitado</mat-radio-button>
+          </mat-radio-group>
+        </div>
+        <div class="col-6">
+          <mat-form-field class="example-form-field">
+            <mat-label>Cédula</mat-label>
+            <input formControlName="cedula" name="cedula" matInput type="text">
+          </mat-form-field>
+        </div>
+        <div class="col-6">
+          <mat-form-field class="example-form-field">
+            <mat-label>Nombre</mat-label>
+            <input formControlName="nombre" name="nombre" matInput type="text">
+          </mat-form-field>
+        </div>
+        <div class="col-6">
+          <mat-form-field class="example-form-field">
+            <mat-label>Apellido paterno</mat-label>
+            <input formControlName="apellidoPaterno" name="apellidoPaterno" matInput type="text">
+          </mat-form-field>
+        </div>
+        <div class="col-6">
+          <mat-form-field class="example-form-field">
+            <mat-label>Apellido materno</mat-label>
+            <input formControlName="apellidoMaterno" name="apellidoMaterno" matInput type="text">
+          </mat-form-field>
+        </div>
+        <div class="col-6">
+          <mat-slide-toggle formControlName="esEspecialista" name="esEspecialista">Es especialista</mat-slide-toggle>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div mat-dialog-actions>
+  <button mat-raised-button (click)="cancelar()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="guardar()" *ngIf="data.tipo === 'CREAR'">Guardar</button>
+  <button mat-raised-button color="primary" (click)="editar()" *ngIf="data.tipo === 'MOSTRAR'">Editar</button>
+  <button mat-raised-button color="primary" (click)="actualizar()" *ngIf="data.tipo === 'EDITAR'">Guardar</button>
+</div>

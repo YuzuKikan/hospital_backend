@@ -1,0 +1,93 @@
+<mat-toolbar>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-6">
+        <button (click)="crearIngreso()" mat-raised-button color="primary" class="my-2">
+          <mat-icon>add_circle_outline</mat-icon>
+          Crear
+        </button>
+      </div>
+      <div class="col-6">
+        <mat-form-field appearance="fill">
+          <mat-label>Buscar</mat-label>
+          <input [(ngModel)]="textoBusqueda" name="textoBusqueda" (keyup.enter)="LeerTodo()" matInput />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+</mat-toolbar>
+
+<div class="container-fluid my-3">
+  <div class="row">
+    <div class="col">
+      <div class="mat-elevation-z8">
+        <table mat-table [dataSource]="dataSource">
+          <!--- Note that these columns can be defined in any order.
+                              The actual rendered columns are set as a property on the row definition" -->
+
+          <!-- Name Column -->
+          <ng-container matColumnDef="medicoId">
+            <th mat-header-cell *matHeaderCellDef> Medico </th>
+            <!-- <td mat-cell *matCellDef="let element">{{ element.medicoId }}</td> -->
+            <td mat-cell *matCellDef="let element">{{ (medicoNombres[element.medicoId] || 'Cargando...') | uppercase }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="pacienteId">
+            <th mat-header-cell *matHeaderCellDef> Paciente </th>
+            <!-- <td mat-cell *matCellDef="let element">{{ element.pacienteId }}</td> -->
+            <td mat-cell *matCellDef="let element">{{ (pacienteNombres[element.pacienteId] || 'Cargando...') | uppercase }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef> Fecha </th>
+            <td mat-cell *matCellDef="let element">{{ element.fecha | customDate }}</td>
+            <!-- <td mat-cell *matCellDef="let element">{{ element.fecha | date: 'dd/MM/yyyy HH:mm' }}</td> -->
+            <!-- <td mat-cell *matCellDef="let element">{{ setFechaForm(element.fecha) }}</td> -->
+          </ng-container>
+
+          <ng-container matColumnDef="numeroSala">
+            <th mat-header-cell *matHeaderCellDef> No. Sala</th>
+            <td mat-cell *matCellDef="let element">{{ element.numeroSala }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="numeroCama">
+            <th mat-header-cell *matHeaderCellDef> No. Cama</th>
+            <td mat-cell *matCellDef="let element">{{ element.numeroCama }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="diagnostico">
+            <th mat-header-cell *matHeaderCellDef> Diagnóstico</th>
+            <td mat-cell *matCellDef="let element">{{ element.diagnostico | uppercase }}</td>
+          </ng-container>
+
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let element">
+              <button (click)="eliminar(element.id, $event)" matTooltip="Eliminar elemento" mat-icon-button
+                color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row (dblclick)="abrirVentana(row)" *matRowDef="let row; columns: displayedColumns"></tr>
+
+          <tr class="mat-row" *matNoDataRow="">
+            <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+              <div class="mensaje-no-existen-datos">
+                <mat-icon class="mx-3">error</mat-icon> No existen datos para mostrar
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <mat-paginator #paginator (page)="cambiarPagina($event)" [length]="cantidadTotal" [pageSize]="cantidadPorPagina"
+          [showFirstLastButtons]="true" [pageSizeOptions]="opcionesDePaginado" [pageIndex]="numeroDePagina">
+        </mat-paginator>
+      </div>
+    </div>
+  </div>
+</div>
