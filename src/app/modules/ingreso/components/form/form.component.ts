@@ -1,7 +1,8 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { HttpService } from '../../../../services/http.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog'
+import { NumberValidators } from '../../../../validators/cedula-format';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 import { forkJoin } from 'rxjs';
 
@@ -29,11 +30,11 @@ export class FormComponent implements OnInit {
   ngOnInit(): void {
     // console.log(this.data)
 
-    this.httpService.LeerTodoPaciente(10000, 0, '').subscribe((respuesta: any) => {
-      this.pacientes = respuesta.datos.elemento;
-    });
     this.httpService.LeerTodoMedico(10000, 0, '').subscribe((respuesta: any) => {
       this.medicos = respuesta.datos.elemento;
+    });
+    this.httpService.LeerTodoPaciente(10000, 0, '').subscribe((respuesta: any) => {
+      this.pacientes = respuesta.datos.elemento;
     });
 
     if (this.data.tipo === 'CREAR') {
@@ -58,7 +59,6 @@ export class FormComponent implements OnInit {
 
 
   guardar() {
-
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);
@@ -73,11 +73,11 @@ export class FormComponent implements OnInit {
         pacienteId: dataForm.pacienteId
       }
 
-      console.log("Data orden ==> ", dataOrden)
+      // console.log("Data orden ==> ", dataOrden)
       this.httpService.CrearIngreso(dataOrden).subscribe((respuesta: any) => {
         // console.log("entra ==> " + respuesta);
         this.toastr.success('Elemento guardado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close(true);
+        this.dialogRef.close({ recargarDatos: true });
       },
         (error: any) => {
           // console.error('Error al enviar el formulario:', error);
@@ -108,10 +108,9 @@ export class FormComponent implements OnInit {
 
       this.httpService.ActualizarIngreso(this.id, dataOrden).subscribe((respuesta: any) => {
         this.toastr.success('Elemento actualizado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close(true);
+        this.dialogRef.close({ recargarDatos: true });
       },
         (error: any) => {
-          // console.error('Error al enviar el formulario:', error);
           this.toastr.error('No se pudo enviar el formulario. "Actualizar" ', 'Error');
         }
       );
@@ -126,8 +125,8 @@ export class FormComponent implements OnInit {
     this.formGroup = this.fb.group({
       medicoId: [{ value: null, disabled: false }, [Validators.required]],
       pacienteId: [{ value: null, disabled: false }, [Validators.required]],
-      numeroSala: [{ value: null, disabled: false }, [Validators.required]],
-      numeroCama: [{ value: null, disabled: false }, [Validators.required]],
+      numeroSala: [{ value: null, disabled: false }, [Validators.required, NumberValidators.onlyNumbers, Validators.max(1000)]],
+      numeroCama: [{ value: null, disabled: false }, [Validators.required, NumberValidators.onlyNumbers, Validators.max(10000)]],
       diagnostico: [{ value: null, disabled: false }, [Validators.required]],
       observacion: [{ value: null, disabled: false }]
     });

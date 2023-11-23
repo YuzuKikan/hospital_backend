@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, Inject, OnInit } from '@angular/core';
 import { HttpService } from '../../../../services/http.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -16,6 +16,7 @@ import { forkJoin } from 'rxjs';
 export class FormComponent implements OnInit {
 
   formGroup!: FormGroup;
+  dialogTitle!: string;
   keyMedicos: { [key: number]: string } = {};
   id!: number;
 
@@ -27,32 +28,32 @@ export class FormComponent implements OnInit {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
   ) { }
+  @HostListener('window:popstate', ['$event'])
+  onPopState(event: any): void {
+    this.cancelar();
+  }
 
   ngOnInit(): void {
     // console.log(this.data);
-
     this.keyMedicos = {};
     this.setKeyMedicos();
 
-    console.log(this.keyMedicos);
-
     if (this.data.tipo === 'CREAR') {
+      this.dialogTitle = 'Crear Datos Médico';
       this.initForm();
     }
 
     if (this.data.tipo === 'MOSTRAR') {
+      this.dialogTitle = 'Actualizar Datos Médico';
       this.initForm();
       this.getMedicoData(this.data.datos.id);
       this.formGroup.disable();
     }
   }
 
-
-
   cancelar() {
     this.dialogRef.close();
   }
-
   editar() {
     this.formGroup.enable();
     this.data.tipo = "EDITAR";
@@ -61,8 +62,8 @@ export class FormComponent implements OnInit {
   guardar() {
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
-
       const cedulaExistente = Object.values(this.keyMedicos).includes(dataForm.cedula);
+
       if (cedulaExistente) {
         this.toastr.error('Ya existe un médico con la misma cédula.', 'Error');
         return;
@@ -76,31 +77,30 @@ export class FormComponent implements OnInit {
         apellidoPaterno: dataForm.apellidoPaterno,
         apellidoMaterno: dataForm.apellidoMaterno
       };
+      // console.log("Data orden ==> ", dataOrden)
 
       this.httpService.CrearMedico(dataOrden).subscribe((respuesta: any) => {
         this.toastr.success('Elemento guardado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close(true);
+        this.dialogRef.close({ recargarDatos: true });
       },
         (error: any) => {
           // console.error('Error al enviar el formulario:', error);
           this.toastr.error('No se pudo enviar el formulario.', 'Error');
         });
     } else {
-      // Formulario no válido, muestra un mensaje de error
-      this.toastr.error('Por favor, completa todos los campos obligatorios.', 'Error');
+      this.mensajeError();
     }
   }
 
   actualizar() {
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
-      const cedulaExistente = Object.values(this.keyMedicos).includes(dataForm.cedula);
 
-      if (cedulaExistente) {
-        this.toastr.error('Ya existe un médico con la misma cédula.', 'Error');
+      if (this.existeMedico(this.id, dataForm.cedula)) {
+        this.toastr.error('Ya existe otro médico con la misma cédula.', 'Error');
         return;
       }
-      
+
       const dataOrden = {
         cedula: dataForm.cedula,
         nombre: dataForm.nombre,
@@ -112,7 +112,7 @@ export class FormComponent implements OnInit {
 
       this.httpService.ActualizarMedico(this.id, dataOrden).subscribe((respuesta: any) => {
         this.toastr.success('Elemento actualizado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close(true);
+        this.dialogRef.close({ recargarDatos: true });
       },
         (error: any) => {
           // console.error('Error al enviar el formulario:', error);
@@ -120,19 +120,7 @@ export class FormComponent implements OnInit {
         }
       );
     } else {
-      const cedulaError = NumberValidators.cedulaFormat(this.formGroup.get('cedula')!);
-      if (cedulaError) {
-        console.log("error cedula letra o numero");
-        this.toastr.error(cedulaError['cedulaFormat'], 'Error en la cédula');
-        return;
-      }
-      const nombreError = CustomValidators.noNumbersOrSpaces(this.formGroup.get('nombre')!);
-      if (nombreError) {
-        console.log("error nombre o apellido");
-        this.toastr.error(nombreError['noNumbersOrSpaces'], 'Error en la nombre o apellido');
-        return;
-      }
-      this.toastr.error('Por favor, completa todos los campos obligatorios.', 'Error');
+      this.mensajeError();
     }
   }
 
@@ -184,5 +172,32 @@ export class FormComponent implements OnInit {
         this.cdr.detectChanges();
       });
     });
+  }
+
+  existeMedico(id: number, cedula: string): boolean {
+    const otrasCedulas = Object.entries(this.keyMedicos)
+      .filter(([key, value]) => Number(key) !== id && value === cedula);
+
+    return otrasCedulas.length > 0;
+  }
+
+  mensajeError() {
+    const cedulaError = NumberValidators.cedulaFormat(this.formGroup.get('cedula')!);
+    if (cedulaError) {
+      this.toastr.error(cedulaError['cedulaFormat'], 'Error en la cédula');
+      return;
+    }
+    var nombreError = CustomValidators.noNumbersOrSpaces(this.formGroup.get('nombre')!);
+    if (nombreError) {
+      this.toastr.error(nombreError['noNumbersOrSpaces'], 'Error en la nombre o apellido');
+      return;
+    }
+    nombreError = CustomValidators.noNumbersOrSpaces(this.formGroup.get('apellidoPaterno')!);
+    if (nombreError) {
+      this.toastr.error(nombreError['noNumbersOrSpaces'], 'Error en la nombre o apellido');
+      return;
+    }
+    // Formulario no válido, muestra un mensaje de error
+    this.toastr.error('Por favor, completa todos los campos obligatorios.', 'Error');
   }
 }

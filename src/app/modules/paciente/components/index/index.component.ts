@@ -74,10 +74,12 @@ export class IndexComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      this.LeerTodo();
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
-  
+
   abrirVentana(row: any) {
     const dialogRef = this.dialog.open(FormComponent, {
       disableClose: true,
@@ -92,7 +94,9 @@ export class IndexComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      this.LeerTodo();
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
 }

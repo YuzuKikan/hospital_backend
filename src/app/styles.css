@@ -1,0 +1,36 @@
+/* You can add global styles to this file, and also import other style files */
+
+html,
+boday {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+.at-toobar .mat-mdc-form-field-subscript-wrapper.mat-mdc-form-field-bottom-align{
+    display: none;
+}
+
+.mat-mdc-form-field:not(.mat-mdc-paginator-page-size-select){
+    width: 100%;
+}
+/* .invalid-field {
+  border-color: #ff0000;
+}
+.example-form-field mat-form-field-invalid {
+  background-color: #FFEBEE;
+} */
+
+.example-form-field.has-error .mat-form-field-wrapper {
+  border-color: #ff0000;
+}
+
+.example-form-field.has-error .mat-form-field-label,
+.example-form-field.has-error .mat-form-field-ripple {
+  color: #ff0000;
+}
+
+.example-form-field.has-error .mat-select-arrow {
+  color: #ff0000;
+}

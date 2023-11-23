@@ -86,7 +86,9 @@ export class HttpService {
         };
         return this.httpCliente.delete('http://localhost:61766/api/egreso', option);
     }
-
+    // ###############################################################################
+    // ###############################################################################
+    // ###############################################################################
     CrearMedico(item: any) {
         return this.httpCliente.post('http://localhost:61766/api/medico', item);
     }
@@ -116,7 +118,7 @@ export class HttpService {
     // ###############################################################################
     // ###############################################################################
     CrearIngreso(item: any) {
-        console.log("ENTRADA " + item.fecha)
+        // console.log("ENTRADA " + item.fecha)
         return this.httpCliente.post('http://localhost:61766/api/ingreso', item);
     }
 

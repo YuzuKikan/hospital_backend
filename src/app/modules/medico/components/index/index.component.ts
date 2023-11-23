@@ -72,9 +72,11 @@ export class IndexComponent implements OnInit {
         tipo: 'CREAR'
       }
     });
-    
+
     dialogRef.afterClosed().subscribe(result => {
-      this.LeerTodo();
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
 
@@ -92,7 +94,9 @@ export class IndexComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      this.LeerTodo();
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
 }

@@ -4,7 +4,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../form/form.component';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-index',
@@ -16,7 +17,8 @@ export class IndexComponent implements OnInit {
   displayedColumns: string[] = ['medicoId', 'ingresoId', 'fecha', 'tratamiento', 'monto', 'acciones'];
   dataSource = new MatTableDataSource<any>([]);
   medicoNombres: { [key: number]: string } = {};
-  ingresoData: { [key: number]: { datos: string, fecha: string } } = {};
+  pacienteNombres: { [key: number]: string } = {};
+  ingresoData: { [key: number]: { datPa: string, datos: string, fecha: string } } = {};
 
   cantidadTotal = 0;
   cantidadPorPagina = 10;
@@ -40,30 +42,34 @@ export class IndexComponent implements OnInit {
   LeerTodo() {
     this.HttpService.LeerTodoEgreso(this.cantidadPorPagina, this.numeroDePagina, this.textoBusqueda)
       .subscribe((respuesta: any) => {
-        console.log(respuesta);
+        // console.log(respuesta);
         this.dataSource.data = respuesta.datos.elemento;
         this.cantidadTotal = respuesta.datos.cantidadTotal;
 
         this.medicoNombres = {}
         this.ingresoData = {}
 
-        const observables = respuesta.datos.elemento.map((element: any) => {
-          return forkJoin([
-            this.getMedicoData(element.medicoId),
-            this.getIngresoData(element.ingresoId)
-          ]);
-        });
-
-        forkJoin(observables).subscribe(
-          () => {
-            // Todos los datos se han cargado, ahora puedes mostrar los datos en el componente.
-            this.cdr.detectChanges();
-          },
-          (error: any) => {
-            console.error('Error al obtener datos adicionales', error);
-          }
-        );
+        this.datosAdicionalesBibliotecas(respuesta.datos.elemento);
       })
+  }
+
+  datosAdicionalesBibliotecas(elementos: any[]): void {
+    const observables = elementos.map((elemento: any) => {
+      return forkJoin([
+        this.getMedicoData(elemento.medicoId),
+        this.getIngresoData(elemento.ingresoId)
+      ]);
+    });
+
+    forkJoin(observables).subscribe(
+      () => {
+        // Todos los datos se han cargado, ahora puedes mostrar los datos en el componente.
+        this.cdr.detectChanges();
+      },
+      (error: any) => {
+        console.error('Error al obtener datos adicionales', error);
+      }
+    );
   }
 
   cambiarPagina(event: any) {
@@ -100,7 +106,9 @@ export class IndexComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      this.LeerTodo();
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
 
@@ -118,38 +126,59 @@ export class IndexComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      this.LeerTodo();
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
 
   getMedicoData(id: number) {
-    this.HttpService.LeerUnoMedico(id).subscribe((respuesta: any) => {
-      const medicoNombre = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : ""}`;
-
-      this.medicoNombres[id] = medicoNombre;
-      this.cdr.detectChanges();
-    });
+    return this.HttpService.LeerUnoMedico(id).pipe(
+      map((respuesta: any) => this.procesarRespuestaMedico(respuesta, id)),
+      catchError((error: any) => this.manipularError('médico', error))
+    );
   }
 
   getIngresoData(id: number) {
-    this.HttpService.LeerUnoIngreso(id).subscribe((respuesta: any) => {
-      
+    return this.HttpService.LeerUnoIngreso(id).pipe(
+      map((respuesta: any) => this.procesarRespuestaIngreso(respuesta, id)),
+      catchError((error: any) => this.manipularError('ingreso', error))
+    );
+  }
+
+  procesarRespuestaMedico(respuesta: any, id: number) {
+    if (respuesta && respuesta.datos) {
+      const medicoNombre = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : ""}`;
+      this.medicoNombres[id] = medicoNombre;
+    } else {
+      console.error('Error: Respuesta inesperada al leer datos del médico.');
+    }
+  }
+
+  procesarRespuestaIngreso(respuesta: any, id: number) {
+    if (respuesta && respuesta.datos) {
       const ingresoDatos = {
-        datos: `Diagnostico: ${respuesta.datos.diagnostico} // ${respuesta.datos.observacion != null ? 'Yes' : 'No'} // Fecha: `,
+        datPa: `Paciente: ${respuesta.datos.pacienteId} // `,
+        datos: `Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
         fecha: respuesta.datos.fecha
       };
 
       // Verificar si la entrada ya existe antes de agregarla
       if (!this.ingresoData[id]) {
         this.ingresoData[id] = ingresoDatos;
-
-        // Detección de cambios solo cuando se completa la adición de datos
-        this.cdr.detectChanges();
       }
-    });
+    } else {
+      console.error('Error: Respuesta inesperada al leer datos del ingreso.');
+    }
+  }
+
+  manipularError(tipo: string, error: any) {
+    console.error(`Error al obtener datos del ${tipo}`, error);
+    return of(undefined);  // Devuelve un observable de undefined en caso de error
   }
 
 
 
 
 }
+

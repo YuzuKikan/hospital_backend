@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { HttpService } from '../../../../services/http.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { NumberValidators } from '../../../../validators/cedula-format';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog'
 import { ToastrService } from 'ngx-toastr';
 
@@ -37,28 +38,33 @@ export class FormComponent implements OnInit {
       this.ingresos.forEach((ingreso: any) => {
         this.httpService.LeerUnoPaciente(ingreso.pacienteId).subscribe((respuesta: any) => {
           // Actualizar el pacienteId con la información deseada
-          const aplMatern = respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : "";
-          ingreso.pacienteId = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${aplMatern}`;
+          const materno = respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : "";
+          ingreso.pacienteId = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${materno}`;
         });
       });
     });
 
     if (this.data.tipo === 'CREAR') {
+      console.log("Crearmos? ==> " + this.data.tipo)
       this.initForm();
     }
 
     if (this.data.tipo === 'MOSTRAR') {
+      console.log("mostramos? ==> " + this.data.tipo)
       this.initForm();
       this.getEgresoData(this.data.datos.id)
+      this.formGroup.disable();
       this.formGroup.disable();
     }
   }
 
   cancelar() {
+    console.log("cerramos? ==> " + this.data.tipo)
     this.dialogRef.close();
   }
 
   editar() {
+    console.log("editamos? ==> " + this.data.tipo)
     this.formGroup.enable();
     this.data.tipo = "EDITAR";
   }
@@ -66,6 +72,7 @@ export class FormComponent implements OnInit {
 
   guardar() {
 
+    console.log("??? ==> " + this.data.tipo)
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);
@@ -78,10 +85,9 @@ export class FormComponent implements OnInit {
         tratamiento: dataForm.tratamiento
       }
 
-      console.log("Data orden ==> ", dataOrden)
       this.httpService.CrearEgreso(dataOrden).subscribe((respuesta: any) => {
         this.toastr.success('Elemento guardado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close(true);
+        this.dialogRef.close({ recargarDatos: true });
       },
         (error: any) => {
           this.toastr.error('No se pudo enviar el formulario.', 'Error');
@@ -93,10 +99,10 @@ export class FormComponent implements OnInit {
   }
 
   actualizar() {
+    console.log("??? ==> " + this.data.tipo)
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);
-      // console.log(fechaForm)
 
       const dataOrden = {
         fecha: fechaForm,
@@ -108,10 +114,9 @@ export class FormComponent implements OnInit {
 
       this.httpService.ActualizarEgreso(this.id, dataOrden).subscribe((respuesta: any) => {
         this.toastr.success('Elemento actualizado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close(true);
+        this.dialogRef.close({ recargarDatos: true });
       },
         (error: any) => {
-          // console.error('Error al enviar el formulario:', error);
           this.toastr.error('No se pudo enviar el formulario. "Actualizar" ', 'Error');
         }
       );
@@ -124,7 +129,7 @@ export class FormComponent implements OnInit {
 
   initForm() {
     this.formGroup = this.fb.group({
-      monto: [{ value: null, disabled: false }, [Validators.required]],
+      monto: [{ value: null, disabled: false }, [Validators.required, Validators.max(10000), NumberValidators.onlyNumbers]],
       medicoId: [{ value: null, disabled: false }, [Validators.required]],
       ingresoId: [{ value: null, disabled: false }, [Validators.required]],
       tratamiento: [{ value: null, disabled: false }, [Validators.required]]
