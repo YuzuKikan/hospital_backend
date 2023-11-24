@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NumberValidators } from '../../../../validators/cedula-format';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog'
 import { ToastrService } from 'ngx-toastr';
+import { catchError, forkJoin, mergeMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-form',
@@ -26,36 +27,35 @@ export class FormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // console.log(this.data)
+    forkJoin([
+      this.httpService.LeerTodoMedico(10000, 0, ''),
+      this.httpService.LeerTodoIngreso(10000, 0, '')
+    ]).pipe(
+      mergeMap(([medicosRespuesta, ingresosRespuesta]: any) => {
+        this.medicos = medicosRespuesta.datos.elemento;
+        this.ingresos = ingresosRespuesta.datos.elemento;
+        return of(null); // Retorna un observable de valor nulo para continuar con la cadena.
+      }),
+      catchError(error => {
+        // Manejar el error, por ejemplo, mostrar un mensaje de error.
+        console.error('Error en la llamada de forkJoin:', error);
+        return of(null); // Retorna un observable de valor nulo para continuar con la cadena.
+      })
+    ).subscribe(() => {
+      // El código aquí se ejecutará después de que forkJoin y las operaciones adicionales hayan terminado.
 
-    this.httpService.LeerTodoMedico(10000, 0, '').subscribe((respuesta: any) => {
-      this.medicos = respuesta.datos.elemento;
-      console.log(this.medicos);
     });
-
-    this.httpService.LeerTodoIngreso(10000, 0, '').subscribe((respuesta: any) => {
-      this.ingresos = respuesta.datos.elemento;
-      // Recorrer la biblioteca y actualizar el pacienteId
-      this.ingresos.forEach((ingreso: any) => {
-        this.httpService.LeerUnoPaciente(ingreso.pacienteId).subscribe((respuesta: any) => {
-          // Actualizar el pacienteId con la información deseada
-          const materno = respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : "";
-          ingreso.pacienteId = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${materno}`;
-        });
-      });
-    });
-
     if (this.data.tipo === 'CREAR') {
       this.initForm();
     }
 
     if (this.data.tipo === 'MOSTRAR') {
       this.initForm();
-      this.getEgresoData(this.data.datos.id)
-      this.formGroup.disable();
+      this.getEgresoData(this.data.datos.id);
       this.formGroup.disable();
     }
   }
+
 
   cancelar() {
     this.dialogRef.close();
@@ -120,7 +120,6 @@ export class FormComponent implements OnInit {
   }
 
 
-
   initForm() {
     this.formGroup = this.fb.group({
       monto: [{ value: null, disabled: false }, [Validators.required, Validators.max(10000), NumberValidators.onlyNumbers]],
@@ -145,5 +144,35 @@ export class FormComponent implements OnInit {
       this.setFormValues(respuesta)
     })
   }
+
+
+  actualizarPacienteIds() {
+    this.ingresos.forEach((ingreso: any) => {
+      this.httpService.LeerUnoPaciente(ingreso.pacienteId).subscribe((respuesta: any) => {
+        // Actualizar el pacienteId con la información deseada
+        const materno = respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : "";
+        ingreso.pacienteId = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${materno}`;
+      });
+    });
+  }
+
+  onMedicoSelected(event: any) {
+    const selectedMedicoId = this.formGroup.get('medicoId')?.value;
+    const selectedRowIndex = event?.target?.selectedIndex;
+    if (selectedRowIndex !== undefined) {
+      console.log(`Medico seleccionado: ${selectedMedicoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+    }
+    console.log(`Medico seleccionado: ${selectedMedicoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+  }
+
+  onIngresoSelected(event: any) {
+    const selectedIngresoId = this.formGroup.get('ingresoId')?.value;
+    const selectedRowIndex = event?.target?.selectedIndex;
+    if (selectedRowIndex !== undefined) {
+      console.log(`Ingreso seleccionado: ${selectedIngresoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+    }
+    console.log(`Ingreso seleccionado: ${selectedIngresoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+  }
+
 
 }
