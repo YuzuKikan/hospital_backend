@@ -30,6 +30,7 @@ export class FormComponent implements OnInit {
 
     this.httpService.LeerTodoMedico(10000, 0, '').subscribe((respuesta: any) => {
       this.medicos = respuesta.datos.elemento;
+      console.log(this.medicos);
     });
 
     this.httpService.LeerTodoIngreso(10000, 0, '').subscribe((respuesta: any) => {
@@ -45,12 +46,10 @@ export class FormComponent implements OnInit {
     });
 
     if (this.data.tipo === 'CREAR') {
-      console.log("Crearmos? ==> " + this.data.tipo)
       this.initForm();
     }
 
     if (this.data.tipo === 'MOSTRAR') {
-      console.log("mostramos? ==> " + this.data.tipo)
       this.initForm();
       this.getEgresoData(this.data.datos.id)
       this.formGroup.disable();
@@ -59,20 +58,16 @@ export class FormComponent implements OnInit {
   }
 
   cancelar() {
-    console.log("cerramos? ==> " + this.data.tipo)
     this.dialogRef.close();
   }
 
   editar() {
-    console.log("editamos? ==> " + this.data.tipo)
     this.formGroup.enable();
     this.data.tipo = "EDITAR";
   }
 
 
   guardar() {
-
-    console.log("??? ==> " + this.data.tipo)
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);
@@ -99,7 +94,6 @@ export class FormComponent implements OnInit {
   }
 
   actualizar() {
-    console.log("??? ==> " + this.data.tipo)
     if (this.formGroup.valid) {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);

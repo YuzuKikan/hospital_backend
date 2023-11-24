@@ -5,7 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../form/form.component';
 import { forkJoin, of } from 'rxjs';
-import { catchError, map, mergeMap } from 'rxjs/operators';
+import { catchError, map,mergeMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-index',
@@ -17,8 +17,7 @@ export class IndexComponent implements OnInit {
   displayedColumns: string[] = ['medicoId', 'ingresoId', 'fecha', 'tratamiento', 'monto', 'acciones'];
   dataSource = new MatTableDataSource<any>([]);
   medicoNombres: { [key: number]: string } = {};
-  pacienteNombres: { [key: number]: string } = {};
-  ingresoData: { [key: number]: { datPa: string, datos: string, fecha: string } } = {};
+  ingresoData: { [key: number]: { datos: string, fecha: string } } = {};
 
   cantidadTotal = 0;
   cantidadPorPagina = 10;
@@ -53,6 +52,8 @@ export class IndexComponent implements OnInit {
       })
   }
 
+
+  
   datosAdicionalesBibliotecas(elementos: any[]): void {
     const observables = elementos.map((elemento: any) => {
       return forkJoin([
@@ -135,16 +136,18 @@ export class IndexComponent implements OnInit {
   getMedicoData(id: number) {
     return this.HttpService.LeerUnoMedico(id).pipe(
       map((respuesta: any) => this.procesarRespuestaMedico(respuesta, id)),
-      catchError((error: any) => this.manipularError('médico', error))
+      catchError((error: any) => this.handleError('médico', error))
     );
   }
 
   getIngresoData(id: number) {
     return this.HttpService.LeerUnoIngreso(id).pipe(
       map((respuesta: any) => this.procesarRespuestaIngreso(respuesta, id)),
-      catchError((error: any) => this.manipularError('ingreso', error))
+      catchError((error: any) => this.handleError('ingreso', error))
     );
   }
+
+
 
   procesarRespuestaMedico(respuesta: any, id: number) {
     if (respuesta && respuesta.datos) {
@@ -158,12 +161,10 @@ export class IndexComponent implements OnInit {
   procesarRespuestaIngreso(respuesta: any, id: number) {
     if (respuesta && respuesta.datos) {
       const ingresoDatos = {
-        datPa: `Paciente: ${respuesta.datos.pacienteId} // `,
-        datos: `Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
+        datos: `Paciente: ${respuesta.datos.pacienteId} // Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
         fecha: respuesta.datos.fecha
       };
 
-      // Verificar si la entrada ya existe antes de agregarla
       if (!this.ingresoData[id]) {
         this.ingresoData[id] = ingresoDatos;
       }
@@ -172,9 +173,11 @@ export class IndexComponent implements OnInit {
     }
   }
 
-  manipularError(tipo: string, error: any) {
+
+
+  handleError(tipo: string, error: any) {
     console.error(`Error al obtener datos del ${tipo}`, error);
-    return of(undefined);  // Devuelve un observable de undefined en caso de error
+    return of(undefined);
   }
 
 

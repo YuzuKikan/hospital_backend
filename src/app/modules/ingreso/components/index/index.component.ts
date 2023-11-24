@@ -5,7 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../form/form.component';
 import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-index',
@@ -18,8 +18,6 @@ export class IndexComponent implements OnInit {
   dataSource = new MatTableDataSource<any>([]);
   pacienteNombres: { [key: number]: string } = {};
   medicoNombres: { [key: number]: string } = {};
-  bibliotecaMedicosMatriz: { id: number, cedula: string, nombre: string }[] = [];
-  // bibliotecaMedico: { [key: number]: { nombreCompleto: string, cedula: string } } = {};
 
   cantidadTotal = 0;
   cantidadPorPagina = 10;
@@ -41,32 +39,33 @@ export class IndexComponent implements OnInit {
 
   LeerTodo() {
     this.HttpService.LeerTodoIngreso(this.cantidadPorPagina, this.numeroDePagina, this.textoBusqueda)
-      .subscribe((respuesta: any) => {
-        // console.log(respuesta);
-        this.dataSource.data = respuesta.datos.elemento;
-        this.cantidadTotal = respuesta.datos.cantidadTotal;
-
-        // Limpia el diccionario antes de cargar nuevos datos
-        this.pacienteNombres = {};
-        this.medicoNombres = {};
-
-        const observables = respuesta.datos.elemento.map((element: any) => {
-          return forkJoin([
+      .pipe(
+        map((respuesta: any) => {
+          this.dataSource.data = respuesta.datos.elemento;
+          this.cantidadTotal = respuesta.datos.cantidadTotal;
+          return respuesta.datos.elemento;
+        }),
+        mergeMap((elementos: any[]) => {
+          const observables = elementos.map((element: any) => forkJoin([
             this.getPacienteData(element.pacienteId),
             this.getMedicoData(element.medicoId)
-          ]);
-        });
-        forkJoin(observables).subscribe(
-          () => {
-            // Todos los datos se han cargado, ahora puedes mostrar los datos en el componente.
-            this.cdr.detectChanges();
-          },
-          (error: any) => {
-            console.error('Error al obtener datos adicionales', error);
-          }
-        );
-      });
-    // this.cargarBibliotecaMedico()
+          ]));
+          return forkJoin(observables);
+        }),
+        catchError((error: any) => {
+          console.error('Error al obtener datos principales', error);
+          return of(null);
+        })
+      )
+      .subscribe(
+        () => {
+          // Todos los datos se han cargado, ahora puedes mostrar los datos en el componente.
+          this.cdr.detectChanges();
+        },
+        (error: any) => {
+          console.error('Error al obtener datos adicionales', error);
+        }
+      );
   }
 
 
@@ -106,8 +105,8 @@ export class IndexComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result && result.recargarDatos) {
-      this.LeerTodo();
-    }
+        this.LeerTodo();
+      }
     })
   }
 
@@ -125,9 +124,9 @@ export class IndexComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-     if (result && result.recargarDatos) {
-      this.LeerTodo();
-    }
+      if (result && result.recargarDatos) {
+        this.LeerTodo();
+      }
     })
   }
 
@@ -137,10 +136,7 @@ export class IndexComponent implements OnInit {
         const pacienteNombre = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : ""}`;
         this.pacienteNombres[id] = pacienteNombre;
       }),
-      catchError((error) => {
-        console.error('Error al obtener datos del paciente', error);
-        return of(null);
-      })
+      catchError((error) => this.handleError('paciente', error))
     );
   }
 
@@ -150,13 +146,14 @@ export class IndexComponent implements OnInit {
         const medicoNombre = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : ""}`;
         this.medicoNombres[id] = medicoNombre;
       }),
-      catchError((error) => {
-        console.error('Error al obtener datos del médico', error);
-        return of(null);
-      })
+      catchError((error) => this.handleError('medico', error))
     );
   }
 
+  handleError(tipo: string, error: any) {
+    console.error(`Error al obtener datos del ${tipo}`, error);
+    return of(null);
+  }
 
   // cargarBibliotecaMedico() {
   //   // Llamada al servicio para obtener la lista de médicos
