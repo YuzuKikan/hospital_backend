@@ -4,7 +4,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../form/form.component';
-import { forkJoin, of } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map,mergeMap } from 'rxjs/operators';
 
 @Component({
@@ -160,20 +160,48 @@ export class IndexComponent implements OnInit {
 
   procesarRespuestaIngreso(respuesta: any, id: number) {
     if (respuesta && respuesta.datos) {
-      const ingresoDatos = {
-        datos: `Paciente: ${respuesta.datos.pacienteId} // Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
-        fecha: respuesta.datos.fecha
-      };
+      this.getDatosPaciente(respuesta.datos.pacienteId).subscribe(
+        (datosPaciente: any) => {
+          const ingresoDatos = {
+            datos: `Paciente: [${datosPaciente.cedula}] ${datosPaciente.nombre} // Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
+            fecha: respuesta.datos.fecha
+          };
 
-      if (!this.ingresoData[id]) {
-        this.ingresoData[id] = ingresoDatos;
-      }
+          if (!this.ingresoData[id]) {
+            this.ingresoData[id] = ingresoDatos;
+            this.cdr.detectChanges(); // Actualizar la vista después de obtener los datos del paciente
+          }
+        },
+        error => {
+          console.error('Error al obtener datos del paciente', error);
+        }
+      );
     } else {
       console.error('Error: Respuesta inesperada al leer datos del ingreso.');
     }
   }
 
+  // procesarRespuestaIngreso(respuesta: any, id: number) {
+  //   if (respuesta && respuesta.datos) {
+  //     const ingresoDatos = {
+  //       datos: `Paciente: ${respuesta.datos.pacienteId} // Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
+  //       fecha: respuesta.datos.fecha
+  //     };
 
+  //     if (!this.ingresoData[id]) {
+  //       this.ingresoData[id] = ingresoDatos;
+  //     }
+  //   } else {
+  //     console.error('Error: Respuesta inesperada al leer datos del ingreso.');
+  //   }
+  // }
+
+  getDatosPaciente(idPaciente: number): Observable<any> {
+    return this.HttpService.LeerUnoPaciente(idPaciente).pipe(
+      map((respuesta: any) => respuesta.datos),
+      catchError((error: any) => this.handleError('paciente', error))
+    );
+  }
 
   handleError(tipo: string, error: any) {
     console.error(`Error al obtener datos del ${tipo}`, error);
