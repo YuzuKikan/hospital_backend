@@ -30,15 +30,15 @@
           <!-- Position Column -->
           <ng-container matColumnDef="medicoId">
             <th mat-header-cell *matHeaderCellDef> Medico </th>
-            <td mat-cell *matCellDef="let element">{{ (medicoNombres[element.medicoId] || 'Cargando...') | uppercase }}
+            <td mat-cell *matCellDef="let element">
+              {{ (medicoNombres[element.medicoId] || 'Cargando...') | uppercase }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="ingresoId">
             <th mat-header-cell *matHeaderCellDef> Ingreso</th>
             <td mat-cell *matCellDef="let element">
-              {{ (ingresoData[element.ingresoId] && ingresoData[element.ingresoId].datos || 'Cargando...') | uppercase
-              }}
+              {{ (ingresoData[element.ingresoId] && ingresoData[element.ingresoId].datos || 'Cargando...') | uppercase}}
               {{ (ingresoData[element.ingresoId] && ingresoData[element.ingresoId].fecha) | customDate}}
             </td>
           </ng-container>

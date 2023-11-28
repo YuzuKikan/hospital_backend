@@ -14,6 +14,8 @@ import { catchError, forkJoin, mergeMap, of } from 'rxjs';
 export class FormComponent implements OnInit {
 
   formGroup!: FormGroup;
+  ingresosOriginales: any[] = [];
+  medicosOriginales: any[] = [];
   ingresos: any[] = [];
   medicos: any[] = [];
   id!: number;
@@ -27,6 +29,7 @@ export class FormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+
     forkJoin([
       this.httpService.LeerTodoMedico(10000, 0, ''),
       this.httpService.LeerTodoIngreso(10000, 0, '')
@@ -34,17 +37,26 @@ export class FormComponent implements OnInit {
       mergeMap(([medicosRespuesta, ingresosRespuesta]: any) => {
         this.medicos = medicosRespuesta.datos.elemento;
         this.ingresos = ingresosRespuesta.datos.elemento;
+        // Guarda copias originales
+        this.medicosOriginales = [{ id: null, nombre: '--Seleccione--' }, ...this.medicos];
+        this.ingresosOriginales = [{ id: null, nombre: '--Seleccione--' }, ...this.ingresos];
+        // Filtrar ingresos y médicos eliminados
+        //################################### CUESTIONABLE
+        this.ingresos = this.ingresos.filter(ingreso => this.medicoExists(ingreso.medicoId));
+        this.medicos = this.medicos.filter(medico => this.medicoExists(medico.id));
+
         return of(null); // Retorna un observable de valor nulo para continuar con la cadena.
       }),
       catchError(error => {
         // Manejar el error, por ejemplo, mostrar un mensaje de error.
         console.error('Error en la llamada de forkJoin:', error);
-        return of(null); // Retorna un observable de valor nulo para continuar con la cadena.
+        return of(null);
       })
     ).subscribe(() => {
-      // El código aquí se ejecutará después de que forkJoin y las operaciones adicionales hayan terminado.
-
+      this.medicos.unshift({ id: null, select: '--Seleccione--' });
+      this.ingresos.unshift({ id: null, select: '--Seleccione--' });
     });
+
     if (this.data.tipo === 'CREAR') {
       this.initForm();
     }
@@ -56,6 +68,10 @@ export class FormComponent implements OnInit {
     }
   }
 
+  //################################### CUESTIONABLE
+  medicoExists(medicoId: number): boolean {
+    return this.medicos.some(medico => medico.id === medicoId);
+  }
 
   cancelar() {
     this.dialogRef.close();
@@ -156,23 +172,34 @@ export class FormComponent implements OnInit {
     });
   }
 
+
+
   onMedicoSelected(event: any) {
     const selectedMedicoId = this.formGroup.get('medicoId')?.value;
-    const selectedRowIndex = event?.target?.selectedIndex;
-    if (selectedRowIndex !== undefined) {
-      console.log(`Medico seleccionado: ${selectedMedicoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+
+    // Filtrar los ingresos según el medicoId seleccionado
+    if (selectedMedicoId !== null) {
+      this.ingresos = this.ingresos.filter(ingreso => ingreso.medicoId === selectedMedicoId);
+    } else {
+      this.ingresos = [...this.ingresosOriginales]; 
     }
-    console.log(`Medico seleccionado: ${selectedMedicoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+    this.medicos = [...this.medicosOriginales];
   }
 
   onIngresoSelected(event: any) {
     const selectedIngresoId = this.formGroup.get('ingresoId')?.value;
-    const selectedRowIndex = event?.target?.selectedIndex;
-    if (selectedRowIndex !== undefined) {
-      console.log(`Ingreso seleccionado: ${selectedIngresoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+    // console.log(`Ingreso seleccionado: ${selectedIngresoId}, ALGO: ${event} `);
+    // Filtrar los médicos según el ingresoId seleccionado
+    if (selectedIngresoId !== null) {
+      const medicoId = this.ingresos.find(ingreso => ingreso.id === selectedIngresoId)?.medicoId;
+      this.medicos = this.medicos.filter(medico => medico.id === medicoId);
+    } else {
+      this.medicos = [...this.medicosOriginales]; // Si no hay selección, mantener todos los médicos
     }
-    console.log(`Ingreso seleccionado: ${selectedIngresoId}, Fila: ${selectedRowIndex}, ALGO: ${event} === ${event?.target} === ${event?.target?.selectedIndex}`);
+    // Restablecer Biblioteca Ingresos a la copia original de ingresos
+    this.ingresos = [...this.ingresosOriginales];
   }
+
 
 
 }
