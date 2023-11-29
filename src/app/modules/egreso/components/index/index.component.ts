@@ -166,7 +166,6 @@ export class IndexComponent implements OnInit {
             datos: `Paciente: [${datosPaciente.cedula}] ${datosPaciente.nombre} // Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
             fecha: respuesta.datos.fecha
           };
-
           if (!this.ingresoData[id]) {
             this.ingresoData[id] = ingresoDatos;
             this.cdr.detectChanges(); // Actualizar la vista después de obtener los datos del paciente
@@ -180,21 +179,6 @@ export class IndexComponent implements OnInit {
       console.error('Error: Respuesta inesperada al leer datos del ingreso.');
     }
   }
-
-  // procesarRespuestaIngreso(respuesta: any, id: number) {
-  //   if (respuesta && respuesta.datos) {
-  //     const ingresoDatos = {
-  //       datos: `Paciente: ${respuesta.datos.pacienteId} // Diagnóstico: ${respuesta.datos.diagnostico} // Fecha: `,
-  //       fecha: respuesta.datos.fecha
-  //     };
-
-  //     if (!this.ingresoData[id]) {
-  //       this.ingresoData[id] = ingresoDatos;
-  //     }
-  //   } else {
-  //     console.error('Error: Respuesta inesperada al leer datos del ingreso.');
-  //   }
-  // }
 
   getDatosPaciente(idPaciente: number): Observable<any> {
     return this.HttpService.LeerUnoPaciente(idPaciente).pipe(

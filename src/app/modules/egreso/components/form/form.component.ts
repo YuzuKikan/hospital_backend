@@ -44,6 +44,8 @@ export class FormComponent implements OnInit {
         //################################### CUESTIONABLE
         this.ingresos = this.ingresos.filter(ingreso => this.medicoExists(ingreso.medicoId));
         this.medicos = this.medicos.filter(medico => this.medicoExists(medico.id));
+        // Actualizar los IDs de pacientes de la biblioteca Ingreso
+        this.actualizarPacienteIds();
 
         return of(null); // Retorna un observable de valor nulo para continuar con la cadena.
       }),
@@ -88,22 +90,26 @@ export class FormComponent implements OnInit {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);
 
-      const dataOrden = {
-        fecha: fechaForm,
-        monto: dataForm.monto,
-        medicoId: dataForm.medicoId,
-        ingresoId: dataForm.ingresoId,
-        tratamiento: dataForm.tratamiento
-      }
-
-      this.httpService.CrearEgreso(dataOrden).subscribe((respuesta: any) => {
-        this.toastr.success('Elemento guardado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close({ recargarDatos: true });
-      },
-        (error: any) => {
-          this.toastr.error('No se pudo enviar el formulario.', 'Error');
+      if (dataForm.medicoId !== null && dataForm.ingresoId !== null) {
+        const dataOrden = {
+          fecha: fechaForm,
+          monto: dataForm.monto,
+          medicoId: dataForm.medicoId,
+          ingresoId: dataForm.ingresoId,
+          tratamiento: dataForm.tratamiento
         }
-      );
+
+        this.httpService.CrearEgreso(dataOrden).subscribe((respuesta: any) => {
+          this.toastr.success('Elemento guardado satisfactoriamente.', 'Confirmación');
+          this.dialogRef.close({ recargarDatos: true });
+        },
+          (error: any) => {
+            this.toastr.error('No se pudo enviar el formulario.', 'Error');
+          }
+        );
+      } else {
+        this.toastr.error('Por favor, selecciona valores válidos para Médico e Ingreso.', 'Error');
+      }
     } else {
       this.toastr.error('Por favor, completa todos los campos obligatorios.', 'Error');
     }
@@ -114,22 +120,26 @@ export class FormComponent implements OnInit {
       const dataForm = this.formGroup.value;
       const fechaForm = new Date().toISOString().slice(0, 19);
 
-      const dataOrden = {
-        fecha: fechaForm,
-        monto: dataForm.monto,
-        medicoId: dataForm.medicoId,
-        ingresoId: dataForm.ingresoId,
-        tratamiento: dataForm.tratamiento,
-      };
+      if (dataForm.medicoId && dataForm.ingresoId !== null) {
+        const dataOrden = {
+          fecha: fechaForm,
+          monto: dataForm.monto,
+          medicoId: dataForm.medicoId,
+          ingresoId: dataForm.ingresoId,
+          tratamiento: dataForm.tratamiento,
+        };
 
-      this.httpService.ActualizarEgreso(this.id, dataOrden).subscribe((respuesta: any) => {
-        this.toastr.success('Elemento actualizado satisfactoriamente.', 'Confirmación');
-        this.dialogRef.close({ recargarDatos: true });
-      },
-        (error: any) => {
-          this.toastr.error('No se pudo enviar el formulario. "Actualizar" ', 'Error');
-        }
-      );
+        this.httpService.ActualizarEgreso(this.id, dataOrden).subscribe((respuesta: any) => {
+          this.toastr.success('Elemento actualizado satisfactoriamente.', 'Confirmación');
+          this.dialogRef.close({ recargarDatos: true });
+        },
+          (error: any) => {
+            this.toastr.error('No se pudo enviar el formulario. "Actualizar" ', 'Error');
+          }
+        );
+      } else {
+        this.toastr.error('Por favor, selecciona valores válidos para Médico e Ingreso.', 'Error');
+      }
     } else {
       this.toastr.error('Por favor, completa todos los campos obligatorios.', 'Error');
     }
@@ -166,8 +176,8 @@ export class FormComponent implements OnInit {
     this.ingresos.forEach((ingreso: any) => {
       this.httpService.LeerUnoPaciente(ingreso.pacienteId).subscribe((respuesta: any) => {
         // Actualizar el pacienteId con la información deseada
-        const materno = respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : "";
-        ingreso.pacienteId = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre} ${respuesta.datos.apellidoPaterno} ${materno}`;
+        // const materno = respuesta.datos.apellidoMaterno != null ? respuesta.datos.apellidoMaterno : "";
+        ingreso.pacienteId = `[${respuesta.datos.cedula}] ${respuesta.datos.nombre}`;
       });
     });
   }
@@ -177,11 +187,10 @@ export class FormComponent implements OnInit {
   onMedicoSelected(event: any) {
     const selectedMedicoId = this.formGroup.get('medicoId')?.value;
 
-    // Filtrar los ingresos según el medicoId seleccionado
     if (selectedMedicoId !== null) {
       this.ingresos = this.ingresos.filter(ingreso => ingreso.medicoId === selectedMedicoId);
     } else {
-      this.ingresos = [...this.ingresosOriginales]; 
+      this.ingresos = [...this.ingresosOriginales];
     }
     this.medicos = [...this.medicosOriginales];
   }
