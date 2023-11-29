@@ -43,13 +43,22 @@ export class IndexComponent implements OnInit {
         map((respuesta: any) => {
           this.dataSource.data = respuesta.datos.elemento;
           this.cantidadTotal = respuesta.datos.cantidadTotal;
+          console.log("Devuelve respeusta ", respuesta.datos.elemento)
           return respuesta.datos.elemento;
         }),
         mergeMap((elementos: any[]) => {
-          const observables = elementos.map((element: any) => forkJoin([
-            this.getPacienteData(element.pacienteId),
-            this.getMedicoData(element.medicoId)
-          ]));
+          const observables = elementos.map((element: any) =>
+            forkJoin([
+              this.getPacienteData(element.pacienteId),
+              this.getMedicoData(element.medicoId)
+            ]).pipe(
+              map(() => element), // Retornar elemento solo si se obtienen paciente y médico exitosamente
+              catchError(() => of(null)) // Manejar el error y devolver un observable nulo
+            ));
+          console.log("Lista medicos => ", this.medicoNombres)
+          console.log("Lista pacientes => ", this.pacienteNombres)
+          console.log("Lista 1 => ",this.dataSource.data);
+          console.log("Lista 2 => ",this.cantidadTotal);
           return forkJoin(observables);
         }),
         catchError((error: any) => {
@@ -58,8 +67,19 @@ export class IndexComponent implements OnInit {
         })
       )
       .subscribe(
-        () => {
-          // Todos los datos se han cargado, ahora puedes mostrar los datos en el componente.
+        (respuesta: any) => {
+          // Filtrar los elementos que tienen coincidencia en médico y paciente
+          const dataSourceFiltrado = this.dataSource.data.filter((element: any) => {
+            return this.medicoNombres.hasOwnProperty(element.medicoId) && this.pacienteNombres.hasOwnProperty(element.pacienteId);
+          });
+          console.log(this.dataSource.data)
+          console.log(dataSourceFiltrado)
+          this.dataSource.data = dataSourceFiltrado;
+          console.log(this.cantidadTotal)
+          console.log(dataSourceFiltrado.length)
+          this.cantidadTotal = this.cantidadTotal - dataSourceFiltrado.length;
+
+          // Todos los datos se han cargado y filtrado, ahora puedes mostrar los datos en el componente.
           this.cdr.detectChanges();
         },
         (error: any) => {
