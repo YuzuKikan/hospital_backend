@@ -5,7 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../form/form.component';
 import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, map,mergeMap } from 'rxjs/operators';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-index',
@@ -49,11 +49,16 @@ export class IndexComponent implements OnInit {
         this.ingresoData = {}
 
         this.datosAdicionalesBibliotecas(respuesta.datos.elemento);
-      })
+        this.cdr.detectChanges();
+      },
+        (error: any) => {
+          console.error('Error al obtener datos de egresos', error);
+        }
+      );
   }
 
 
-  
+
   datosAdicionalesBibliotecas(elementos: any[]): void {
     const observables = elementos.map((elemento: any) => {
       return forkJoin([
@@ -192,8 +197,4 @@ export class IndexComponent implements OnInit {
     return of(undefined);
   }
 
-
-
-
 }
-

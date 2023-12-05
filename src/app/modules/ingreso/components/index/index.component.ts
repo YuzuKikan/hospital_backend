@@ -155,19 +155,4 @@ export class IndexComponent implements OnInit {
     return of(null);
   }
 
-  // cargarBibliotecaMedico() {
-  //   // Llamada al servicio para obtener la lista de médicos
-  //   this.HttpService.LeerTodoMedico(100, this.numeroDePagina, this.textoBusqueda)
-  //     .subscribe((respuesta: any) => {
-  //       // Asumo que datos es un array de médicos en la respuesta
-  //       const datosMedicos = respuesta.datos.elemento;
-  //       // Llenar la biblioteca de médicos con la información necesaria
-  //       this.bibliotecaMedicosMatriz = datosMedicos.map((medico: any) => ({
-  //         id: medico.id,
-  //         cedula: medico.cedula,
-  //         nombre: medico.nombre,
-  //       }));
-  //     });   
-  // console.log("LeerTodo ==> ", this.bibliotecaMedicosMatriz);
-  // }
-}
+  }

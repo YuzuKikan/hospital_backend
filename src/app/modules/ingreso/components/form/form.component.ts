@@ -44,7 +44,6 @@ export class FormComponent implements OnInit {
     if (this.data.tipo === 'MOSTRAR') {
       this.initForm();
       this.getIngresoData(this.data.datos.id);
-      this.formGroup.disable();
     }
   }
 
@@ -142,6 +141,7 @@ export class FormComponent implements OnInit {
       observacion: data.datos.observacion
     })
     this.id = data.datos.id;
+    this.formGroup.disable();
   }
 
   getIngresoData(id: number) {

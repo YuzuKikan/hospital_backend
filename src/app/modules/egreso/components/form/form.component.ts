@@ -40,10 +40,6 @@ export class FormComponent implements OnInit {
         // Guarda copias originales
         this.medicosOriginales = [{ id: null, nombre: '--Seleccione--' }, ...this.medicos];
         this.ingresosOriginales = [{ id: null, nombre: '--Seleccione--' }, ...this.ingresos];
-        // Filtrar ingresos y médicos eliminados
-        //################################### CUESTIONABLE
-        this.ingresos = this.ingresos.filter(ingreso => this.medicoExists(ingreso.medicoId));
-        this.medicos = this.medicos.filter(medico => this.medicoExists(medico.id));
         // Actualizar los IDs de pacientes de la biblioteca Ingreso
         this.actualizarPacienteIds();
 
@@ -66,14 +62,9 @@ export class FormComponent implements OnInit {
     if (this.data.tipo === 'MOSTRAR') {
       this.initForm();
       this.getEgresoData(this.data.datos.id);
-      this.formGroup.disable();
     }
   }
 
-  //################################### CUESTIONABLE
-  medicoExists(medicoId: number): boolean {
-    return this.medicos.some(medico => medico.id === medicoId);
-  }
 
   cancelar() {
     this.dialogRef.close();
@@ -163,6 +154,7 @@ export class FormComponent implements OnInit {
       tratamiento: data.datos.tratamiento
     })
     this.id = data.datos.id;
+    this.formGroup.disable();
   }
 
   getEgresoData(id: number) {
@@ -208,7 +200,5 @@ export class FormComponent implements OnInit {
     // Restablecer Biblioteca Ingresos a la copia original de ingresos
     this.ingresos = [...this.ingresosOriginales];
   }
-
-
 
 }
